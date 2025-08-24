@@ -1,9 +1,10 @@
 import express from "express";
-import logMiddleware from "./middleware/winstonLogger.js";
+import logMiddleware from "./utils/winstonLogger.js";
 import errorHandler from "./middleware/errorHandler.js";
 import dotenv from 'dotenv';
 import appRoutes from "./routes/appRoutes.js";
 import "./middleware/processHandler.js";
+import reqHandler from "./middleware/reqHandler.js";
 
 // setup
 const app = express();
@@ -12,6 +13,7 @@ dotenv.config();
 //middlewares
 app.use(express.json());
 app.use(logMiddleware);
+app.use(reqHandler);
 
 app.get('/', (req, res) => {
     res.send('Hello World');
@@ -26,7 +28,7 @@ app.get('/health', (req, res) => {
 });
 
 //router
-app.use('/api', appRoutes);
+app.use('/', appRoutes);
 
 //error handler
 app.use(errorHandler);
