@@ -17,6 +17,9 @@ const errorHandler = (err, req,res, next) => {
         logger.warn(logMessage);
     }
 
+    if(err.message == "Converting circular structure to JSON\n    --> starting at object with constructor 'Socket'\n    |     property 'parser' -> object with constructor 'HTTPParser'\n    --- property 'socket' closes the circle") {
+        err.message = "Circular reference detected: JSON.stringify() cannot serialize objects with circular references. Please remove or fix the problematic JSON.stringify() call."
+    }
     res.status(500).send({
         status: "error",
         message: 'Something went wrong!',

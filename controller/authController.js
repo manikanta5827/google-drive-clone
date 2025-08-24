@@ -2,6 +2,7 @@ import { logger } from '../utils/winstonLogger.js';
 import bcrypt from 'bcrypt';
 import { PrismaClient } from '@prisma/client';
 import dotenv from "dotenv";
+import { generateAuthToken } from '../service/jwtTokenService.js';
 
 dotenv.config();
 const prisma = new PrismaClient();
@@ -166,7 +167,7 @@ export const verifyEmail = async (req, res) => {
     }
 
     let combinedSecret = `${EMAIL_VERIFICATION_SECRET_CODE}-${email}-${expirationTime}`;
-    let isSame = bcrypt.compare(combinedSecret, code);
+    let isSame = await bcrypt.compare(combinedSecret, code);
 
     if(!isSame) {
         return res.status(400).json({
@@ -195,5 +196,56 @@ export const verifyEmail = async (req, res) => {
     return res.status(200).json({
         status: "success",
         message: "Email verification successful"
+    })
+}
+
+export const login = async (req, res) =>{
+    const email = req.get('email');
+    const password = req.get('password');
+
+    //validate inputs
+    if(!email) {
+        return res.status(400).json({
+            status: "error",
+            message: "email is required"
+        })
+    }
+
+    if(!password) {
+        return res.status(400).json({
+            status: "error",
+            message: "password is required"
+        })
+    }
+
+    // find the user using email
+    const user = await prisma.user.findUnique({
+        where:{
+            email
+        }
+    })
+
+    if(!user) {
+        return res.status(404).json({
+            status: "error",
+            message: "user not found"
+        })
+    }
+
+    //compare passwords
+    const isSame = await bcrypt.compare(password, user.password);
+
+    if(!isSame) {
+        return res.status(400).json({
+            status: "error",
+            message: "password incorrect"
+        })
+    }
+    // generate auth jwt token
+    const authToken = generateAuthToken(user);
+
+    return res.status(200).json({
+        status: "success",
+        authToken: authToken
     })
 }
